@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { supabaseAdmin } from '@/lib/supabase'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
+// Prevent static generation - requires database access
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    const { data: requests, error } = await supabase
+    const { data: requests, error } = await supabaseAdmin
       .from('request')
       .select('*')
       .eq('status', 'pending')
