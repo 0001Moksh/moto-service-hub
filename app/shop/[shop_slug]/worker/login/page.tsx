@@ -50,10 +50,14 @@ export default function WorkerLoginPage() {
     setError('')
 
     try {
+      // Trim inputs before sending
+      const trimmedEmail = email.trim().toLowerCase()
+      const trimmedPassword = password.trim()
+
       const response = await fetch(`/api/shop/${shopSlug}/worker/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: trimmedEmail, password: trimmedPassword }),
       })
 
       const data = await response.json()

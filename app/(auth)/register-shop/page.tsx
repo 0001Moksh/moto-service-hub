@@ -44,57 +44,47 @@ export default function RegisterShopPage() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    console.log("Form submitted!")
-    console.log("Form data:", formData)
     
     setIsLoading(true)
     setError("")
 
     try {
       // Validate required fields
-      if (!formData.shopName || !formData.ownerName || !formData.ownerEmail || !formData.ownerPhone || !formData.shopAddress || !formData.shopCity) {
-        const errorMsg = "Please fill in all required fields"
-        setError(errorMsg)
-        console.error(errorMsg)
+      if (!formData.shopName || !formData.ownerName || !formData.ownerEmail || !formData.ownerPhone || !formData.shopAddress) {
+        setError("Please fill in all required fields marked with *")
         setIsLoading(false)
         return
       }
 
-      console.log("Submitting application...")
-
-      // Send ONLY the fields the API needs
-      const response = await fetch("/api/shops/create", {
+      // Submit shop registration request
+      const response = await fetch("/api/shop/register-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           owner_name: formData.ownerName,
-          email: formData.ownerEmail, // owner email
-          phone_number: formData.ownerPhone, // owner phone
-          name: formData.shopName, // shop name
-          address: formData.shopAddress,
-          city: formData.shopCity,
-          aadhaar: formData.aadhaar,
+          owner_email: formData.ownerEmail,
+          owner_phone: formData.ownerPhone,
+          shop_name: formData.shopName,
+          location: `${formData.shopAddress}, ${formData.shopCity}`,
+          aadhaar_card: formData.aadhaar || null,
         }),
       })
 
-      console.log("API Response Status:", response.status)
-
       const data = await response.json()
-      console.log("API Response Data:", data)
 
       if (!response.ok) {
-        setError(data.error || "Failed to submit application")
+        setError(data.error || "Failed to submit registration request")
         setIsLoading(false)
-        console.error("API Error:", data.error)
         return
       }
 
-      console.log("Application submitted successfully!")
       setSubmitted(true)
-    } catch (err) {
-      const errorMsg = "An error occurred. Please try again."
-      setError(errorMsg)
-      console.error("Submit error:", err)
+      // Redirect after 2 seconds
+      setTimeout(() => {
+        router.push("/")
+      }, 2000)
+    } catch (err: any) {
+      setError(err.message || "An error occurred. Please try again.")
       setIsLoading(false)
     }
   }

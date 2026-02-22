@@ -3,20 +3,34 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Eye, EyeOff, Mail, Lock } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AuthCard } from "@/components/auth/auth-card"
 import { GoogleButton } from "@/components/auth/google-button"
+import { useAuth } from "@/hooks/use-auth"
 
 export default function SignInPage() {
   const router = useRouter()
+  const { login } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [failedAttempts, setFailedAttempts] = useState(0)
+
+  // Clear error when user starts typing
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value)
+    if (error) setError("")
+  }
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value)
+    if (error) setError("")
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -24,29 +38,39 @@ export default function SignInPage() {
     setError("")
 
     try {
-      const response = await fetch("/api/auth/sign-in", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(data.error || "Sign-in failed")
+      // Validate inputs
+      if (!email.trim()) {
+        setError("Please enter your email address")
+        setIsLoading(false)
+        return
+      }
+      if (!password) {
+        setError("Please enter your password")
+        setIsLoading(false)
         return
       }
 
-      // Store user session
-      localStorage.setItem("userRole", data.role)
-      localStorage.setItem("userId", data.userId)
-      localStorage.setItem("userEmail", data.email)
+      await login(email, password)
+      setFailedAttempts(0) // Reset on success
+    } catch (err: any) {
+      const failCount = failedAttempts + 1
+      setFailedAttempts(failCount)
+      
+      // Better error messages
+      let errorMessage = "Invalid email or password"
+      
+      if (err.message?.includes("Invalid email")) {
+        errorMessage = "Invalid email format"
+      } else if (err.message?.includes("password")) {
+        errorMessage = "Incorrect email or password. Please try again."
+      }
 
-      // Redirect based on role
-      router.push(data.redirectUrl)
-    } catch (err) {
-      setError("An error occurred. Please try again.")
-      console.error(err)
+      // Warn after multiple failed attempts
+      if (failCount >= 3) {
+        errorMessage += ` (${failCount} failed attempts)`
+      }
+
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -60,8 +84,17 @@ export default function SignInPage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Error Message */}
         {error && (
-          <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
-            {error}
+          <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400 flex gap-2 items-start">
+            <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* Warning for too many attempts */}
+        {failedAttempts >= 3 && (
+          <div className="rounded-md bg-yellow-50 p-3 text-sm text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">
+            <p className="font-medium">Too many failed attempts</p>
+            <p className="text-xs mt-1">If you forgot your password, please contact support@motoservicehub.com</p>
           </div>
         )}
 
@@ -78,7 +111,8 @@ export default function SignInPage() {
               required
               autoComplete="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={handleEmailChange}
+              disabled={isLoading || failedAttempts >= 5}
             />
           </div>
         </div>
@@ -104,13 +138,15 @@ export default function SignInPage() {
               required
               autoComplete="current-password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handlePasswordChange}
+              disabled={isLoading || failedAttempts >= 5}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               aria-label={showPassword ? "Hide password" : "Show password"}
+              disabled={isLoading}
             >
               {showPassword ? (
                 <EyeOff className="h-4 w-4" />
@@ -125,10 +161,18 @@ export default function SignInPage() {
         <Button
           type="submit"
           className="w-full bg-brand-blue text-primary-foreground font-semibold hover:bg-brand-blue-light"
-          disabled={isLoading}
+          disabled={isLoading || failedAttempts >= 5}
         >
           {isLoading ? "Signing in..." : "Sign In"}
         </Button>
+
+        {/* Account locked message */}
+        {failedAttempts >= 5 && (
+          <div className="text-center text-sm text-red-600 dark:text-red-400">
+            <p>Account temporarily locked due to too many failed attempts.</p>
+            <p>Please contact support@motoservicehub.com</p>
+          </div>
+        )}
       </form>
 
       {/* Divider */}
@@ -144,7 +188,7 @@ export default function SignInPage() {
       </div>
 
       {/* Google */}
-      <GoogleButton label="Sign in with Google" />
+      <GoogleButton label="Sign in with Google" disabled={failedAttempts >= 5} />
 
       {/* Links */}
       <div className="mt-6 space-y-2 text-center text-sm">
@@ -164,6 +208,15 @@ export default function SignInPage() {
             className="font-medium text-brand-orange hover:underline"
           >
             Register your shop
+          </Link>
+        </p>
+        <p className="text-xs text-muted-foreground border-t border-border pt-2 mt-2">
+          Having login issues?{" "}
+          <Link
+            href="/debug"
+            className="font-medium text-brand-blue hover:underline"
+          >
+            Check your account
           </Link>
         </p>
       </div>

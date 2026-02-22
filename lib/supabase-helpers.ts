@@ -1,4 +1,5 @@
 import { supabase, supabaseAdmin } from './supabase'
+import { hashPassword } from './auth'
 import nodemailer from 'nodemailer'
 
 // SMTP Email Setup
@@ -730,6 +731,297 @@ Moto ServiceHub Team
       error: null,
     }
   } catch (error: any) {
+    return {
+      success: false,
+      message: null,
+      error: error.message,
+    }
+  }
+}
+
+// ============================================
+// SHOP REGISTRATION REQUEST MANAGEMENT
+// ============================================
+
+/**
+ * Submit a new shop registration request
+ * Data is stored in the request table awaiting admin approval
+ */
+export async function submitShopRegistrationRequest(data: {
+  owner_name: string
+  owner_email: string
+  owner_phone: string
+  shop_name: string
+  location: string
+  aadhaar_card?: string
+}) {
+  try {
+    const { data: result, error } = await supabaseAdmin
+      .from('request')
+      .insert({
+        owner_name: data.owner_name,
+        owner_email: data.owner_email,
+        owner_phone: data.owner_phone,
+        shop_name: data.shop_name,
+        location: data.location,
+        aadhaar_card_photo: data.aadhaar_card,
+        phone_number: data.owner_phone,
+        status: 'pending',
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+
+    // Send confirmation email to registrant
+    await sendShopRegistrationEmail(data.owner_email, data.shop_name)
+
+    // TODO: Send admin notification email
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@motoservicehub.com'
+    await sendAdminNotificationEmail(
+      adminEmail,
+      {
+        name: data.shop_name,
+        phone_number: data.owner_phone,
+        address: data.location,
+      },
+      data.owner_email
+    )
+
+    return {
+      success: true,
+      request_id: result.request_id,
+      message: 'Registration request submitted successfully',
+      error: null,
+    }
+  } catch (error: any) {
+    console.error('Error submitting shop registration request:', error)
+    return {
+      success: false,
+      request_id: null,
+      message: null,
+      error: error.message,
+    }
+  }
+}
+
+/**
+ * Get all pending shop registration requests
+ * Used by admin dashboard
+ */
+export async function getPendingShopRequests() {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('request')
+      .select('*')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+
+    return {
+      success: true,
+      data: data || [],
+      error: null,
+    }
+  } catch (error: any) {
+    console.error('Error fetching pending requests:', error)
+    return {
+      success: false,
+      data: [],
+      error: error.message,
+    }
+  }
+}
+
+/**
+ * Get all shop registration requests (all statuses)
+ * Used by admin dashboard with filtering
+ */
+export async function getAllShopRequests(status?: string) {
+  try {
+    let query = supabaseAdmin.from('request').select('*')
+
+    if (status) {
+      query = query.eq('status', status)
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false })
+
+    if (error) throw error
+
+    return {
+      success: true,
+      data: data || [],
+      error: null,
+    }
+  } catch (error: any) {
+    console.error('Error fetching shop requests:', error)
+    return {
+      success: false,
+      data: [],
+      error: error.message,
+    }
+  }
+}
+
+/**
+ * Generate a temporary password for approved shop owner
+ */
+function generateTemporaryPassword(): string {
+  const length = 12
+  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%'
+  let password = ''
+  for (let i = 0; i < length; i++) {
+    password += charset.charAt(Math.floor(Math.random() * charset.length))
+  }
+  return password
+}
+
+/**
+ * Approve a shop registration request
+ * Creates owner and shop records
+ */
+export async function approveShopRequest(requestId: number, adminNotes?: string) {
+  try {
+    // Get the request
+    const { data: requestData, error: fetchError } = await supabaseAdmin
+      .from('request')
+      .select('*')
+      .eq('request_id', requestId)
+      .single()
+
+    if (fetchError) throw fetchError
+    if (!requestData) throw new Error('Request not found')
+
+    // Generate temporary password
+    const tempPassword = generateTemporaryPassword()
+
+    // Hash password using bcrypt
+    const hashedPassword = await hashPassword(tempPassword)
+
+    // Create owner record
+    const { data: ownerData, error: ownerError } = await supabaseAdmin
+      .from('owner')
+      .insert({
+        mail: requestData.owner_email,
+        password: hashedPassword,
+        phone: requestData.owner_phone,
+        aadhaar_card: requestData.aadhaar_card_photo,
+      })
+      .select()
+      .single()
+
+    if (ownerError) throw new Error(`Failed to create owner: ${ownerError.message}`)
+
+    // Create shop record
+    const shopSlug = requestData.shop_name
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w-]/g, '')
+
+    const { data: shopData, error: shopError } = await supabaseAdmin
+      .from('shop')
+      .insert({
+        owner_id: ownerData.owner_id,
+        name: requestData.shop_name,
+        slug: shopSlug,
+        location: requestData.location,
+      })
+      .select()
+      .single()
+
+    if (shopError) throw new Error(`Failed to create shop: ${shopError.message}`)
+
+    // Update request status
+    const { error: updateError } = await supabaseAdmin
+      .from('request')
+      .update({
+        status: 'approved',
+      })
+      .eq('request_id', requestId)
+
+    if (updateError) throw updateError
+
+    // Send approval email with credentials
+    await sendShopApprovalEmail(
+      requestData.owner_email,
+      requestData.owner_email,
+      tempPassword,
+      requestData.shop_name
+    )
+
+    return {
+      success: true,
+      owner_id: ownerData.owner_id,
+      shop_id: shopData.shop_id,
+      message: 'Shop request approved and owner/shop records created',
+      error: null,
+    }
+  } catch (error: any) {
+    console.error('Error approving shop request:', error)
+    return {
+      success: false,
+      owner_id: null,
+      shop_id: null,
+      message: null,
+      error: error.message,
+    }
+  }
+}
+
+/**
+ * Reject a shop registration request
+ */
+export async function rejectShopRequest(requestId: number, reason?: string) {
+  try {
+    // Get the request first to get email
+    const { data: requestData, error: fetchError } = await supabaseAdmin
+      .from('request')
+      .select('*')
+      .eq('request_id', requestId)
+      .single()
+
+    if (fetchError) throw fetchError
+    if (!requestData) throw new Error('Request not found')
+
+    // Update request status
+    const { error: updateError } = await supabaseAdmin
+      .from('request')
+      .update({
+        status: 'rejected',
+      })
+      .eq('request_id', requestId)
+
+    if (updateError) throw updateError
+
+    // Send rejection email
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #d32f2f;">Shop Registration - Not Approved</h2>
+        <p>Dear ${requestData.owner_name},</p>
+        <p>Thank you for applying to register your shop on Moto ServiceHub.</p>
+        <p>Unfortunately, your application for <strong>${requestData.shop_name}</strong> has not been approved at this time.</p>
+        ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
+        <p>You can submit a new application after addressing the concerns. For more information, please contact us at support@motoservicehub.com</p>
+        <br>
+        <p>Best regards,<br><strong>Moto ServiceHub Team</strong></p>
+      </div>
+    `
+
+    await sendEmail(
+      requestData.owner_email,
+      'Shop Registration - Application Status',
+      html
+    )
+
+    return {
+      success: true,
+      message: 'Shop request rejected',
+      error: null,
+    }
+  } catch (error: any) {
+    console.error('Error rejecting shop request:', error)
     return {
       success: false,
       message: null,

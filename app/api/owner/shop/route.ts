@@ -1,50 +1,119 @@
+import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { verifyToken } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const ownerId = searchParams.get('ownerId')
-
-    if (!ownerId) {
-      return Response.json(
-        { error: 'Owner ID is required' },
-        { status: 400 }
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: 'Missing authorization header' },
+        { status: 401 }
       )
     }
 
-    // Fetch shop for this owner
+    const token = authHeader.split(' ')[1]
+    const payload = verifyToken(token)
+
+    if (!payload || payload.role !== 'owner') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // Fetch shop by owner_id
     const { data: shop, error } = await supabaseAdmin
       .from('shop')
       .select('*')
-      .eq('owner_id', parseInt(ownerId))
+      .eq('owner_id', payload.userId)
       .single()
 
     if (error || !shop) {
-      console.error('Shop not found:', error)
-      return Response.json(
+      return NextResponse.json(
         { error: 'Shop not found' },
         { status: 404 }
       )
     }
 
-    return Response.json({
+    return NextResponse.json({
       success: true,
-      shop: {
-        shop_id: shop.shop_id,
-        owner_id: shop.owner_id,
-        name: shop.name || 'My Shop',
-        slug: shop.slug || 'my-shop',
-        location: shop.location,
-        rating: shop.rating,
-        revenue: shop.revenue,
-      },
+      shop,
     })
-  } catch (error: any) {
-    console.error('Get shop error:', error)
-    return Response.json(
-      { error: error.message || 'Failed to fetch shop' },
+  } catch (error) {
+    console.error('Error fetching shop:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: 'Missing authorization header' },
+        { status: 401 }
+      )
+    }
+
+    const token = authHeader.split(' ')[1]
+    const payload = verifyToken(token)
+
+    if (!payload || payload.role !== 'owner') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const body = await request.json()
+    const { name, location } = body
+
+    // Get shop first
+    const { data: shop } = await supabaseAdmin
+      .from('shop')
+      .select('*')
+      .eq('owner_id', payload.userId)
+      .single()
+
+    if (!shop) {
+      return NextResponse.json(
+        { error: 'Shop not found' },
+        { status: 404 }
+      )
+    }
+
+    // Update shop
+    const { data: updatedShop, error } = await supabaseAdmin
+      .from('shop')
+      .update({
+        name: name || shop.name,
+        location: location || shop.location,
+      })
+      .eq('shop_id', shop.shop_id)
+      .select('*')
+      .single()
+
+    if (error) {
+      return NextResponse.json(
+        { error: 'Failed to update shop' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      shop: updatedShop,
+    })
+  } catch (error) {
+    console.error('Error updating shop:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

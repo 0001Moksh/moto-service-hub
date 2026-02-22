@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { comparePassword } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,13 +45,17 @@ export async function POST(
       )
     }
 
-    console.log(`[Worker Verify] Looking up worker: ${email} in shop: ${shopData.shop_id}`)
+    // Trim and normalize inputs
+    const cleanEmail = email.trim().toLowerCase()
+    const cleanPassword = password.toString().trim()
+
+    console.log(`[Worker Verify] Looking up worker: ${cleanEmail} in shop: ${shopData.shop_id}`)
 
     // Find worker by email and shop_id
     const { data: workerData, error: workerError } = await supabaseAdmin
       .from('worker')
       .select('worker_id, mail, password, shop_id')
-      .eq('mail', email)
+      .eq('mail', cleanEmail)
       .eq('shop_id', shopData.shop_id)
       .single()
 
@@ -63,23 +68,30 @@ export async function POST(
     }
 
     if (!workerData) {
-      console.error(`[Worker Verify] No worker found for email: ${email}`)
+      console.error(`[Worker Verify] No worker found for email: ${cleanEmail}`)
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
       )
     }
 
-    // Verify password
-    if (workerData.password !== password) {
-      console.error(`[Worker Verify] Password mismatch for worker: ${email}`)
+    // Verify password using bcrypt comparison
+    console.log(`[Worker Verify] Stored password preview: ${workerData.password?.substring(0, 20)}...`)
+    console.log(`[Worker Verify] Submitted password: ${cleanPassword}`)
+    console.log(`[Worker Verify] Is bcrypt hash: ${/^\$2[aby]\$\d{2}\$/.test(workerData.password)}`)
+    
+    const passwordMatch = await comparePassword(cleanPassword, workerData.password)
+    console.log(`[Worker Verify] Password match result: ${passwordMatch}`)
+    
+    if (!passwordMatch) {
+      console.error(`[Worker Verify] Password mismatch for worker: ${cleanEmail}`)
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
       )
     }
 
-    console.log(`[Worker Verify] Worker authenticated successfully: ${email}`)
+    console.log(`[Worker Verify] Worker authenticated successfully: ${cleanEmail}`)
 
     return NextResponse.json({
       success: true,

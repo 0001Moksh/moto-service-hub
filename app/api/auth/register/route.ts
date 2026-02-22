@@ -1,12 +1,12 @@
-import { supabase, supabaseAdmin } from '@/lib/supabase'
-import { createCustomer, logAuditEvent } from '@/lib/supabase-helpers'
+import { supabaseAdmin } from '@/lib/supabase'
+import { hashPassword, generateToken } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { email, password, full_name } = body
+    const { email, password, full_name, phone } = body
 
     if (!email || !password || !full_name) {
       return Response.json(
@@ -15,66 +15,75 @@ export async function POST(request: Request) {
       )
     }
 
-    // Create auth user
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name,
-          role: 'customer',
-        },
-      },
-    })
+    // Check if email already exists
+    const { data: existingCustomer, error: checkError } = await supabaseAdmin
+      .from('customer')
+      .select('customer_id')
+      .eq('mail', email)
+      .maybeSingle()
 
-    if (authError) throw authError
-
-    if (!authData.user) {
-      throw new Error('Failed to create user')
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Email check error:', checkError)
+      return Response.json(
+        { error: 'Failed to check email availability' },
+        { status: 500 }
+      )
     }
 
-    // Create profile
-    const { error: profileError } = await supabaseAdmin
-      .from('profiles')
+    if (existingCustomer) {
+      return Response.json(
+        { error: 'Email already registered' },
+        { status: 400 }
+      )
+    }
+
+    // Hash password
+    const hashedPassword = await hashPassword(password)
+
+    // Create customer
+    const { data: newCustomer, error: customerError } = await supabaseAdmin
+      .from('customer')
       .insert({
-        id: authData.user.id,
-        email,
-        full_name,
-        role: 'customer',
-        status: 'active',
+        mail: email,
+        password: hashedPassword,
+        aadhaar_card: null,
+        bike_id_array: [],
+        rating: 0,
+        token: null,
+        preferance_score: 0,
+        picture: null,
+        location: null,
+        created_at: new Date().toISOString(),
       })
+      .select('customer_id, mail')
+      .single()
 
-    if (profileError) throw profileError
+    if (customerError) {
+      console.error('Customer creation error:', customerError)
+      return Response.json(
+        { error: 'Failed to create customer account' },
+        { status: 500 }
+      )
+    }
 
-    // Create customer record
-    const { error: customerError } = await supabaseAdmin
-      .from('customers')
-      .insert({
-        user_id: authData.user.id,
-        name: full_name,
-        email,
-        phone_number: body.phone_number || '',
-      })
-
-    if (customerError) throw customerError
-
-    // Log audit event
-    await logAuditEvent(
-      'user',
-      authData.user.id,
-      '',
-      'CREATE_USER',
-      null,
-      { email, role: 'customer' }
-    )
+    // Generate token
+    const token = generateToken({
+      userId: newCustomer.customer_id,
+      email: newCustomer.mail,
+      role: 'customer',
+    })
 
     return Response.json(
       {
-        message: 'User registered successfully',
+        success: true,
+        message: 'Customer registered successfully',
+        token,
         user: {
-          id: authData.user.id,
-          email: authData.user.email,
+          id: newCustomer.customer_id,
+          email: newCustomer.mail,
+          role: 'customer',
         },
+        redirectUrl: '/customer/dashboard',
       },
       { status: 201 }
     )

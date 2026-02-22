@@ -1,199 +1,136 @@
-import { supabaseAdmin } from '@/lib/supabase'
-import { logAuditEvent } from '@/lib/supabase-helpers'
+import { NextRequest, NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+import { verifyToken } from '@/lib/auth';
 
-export const dynamic = 'force-dynamic'
-
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const {
-      shop_id,
-      customer_id,
-      vehicle_id,
-      booking_date,
-      booking_time,
-      description,
-      service_ids, // Array of service IDs to add to booking
-    } = body
+    const authHeader = request.headers.get('Authorization') || '';
+    const token = authHeader.split(' ')[1];
+    const payload = verifyToken(token);
 
-    if (!shop_id || !customer_id || !vehicle_id || !booking_date || !booking_time) {
-      return Response.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      )
+    if (!payload || payload.role !== 'customer') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    // Verify shop, customer, and vehicle exist
-    const { data: shop } = await supabaseAdmin
-      .from('shops')
-      .select('id')
-      .eq('id', shop_id)
-      .single()
+    const body = await request.json();
+    const { bike_id, shop_id, service_id, customer_id } = body;
 
-    const { data: customer } = await supabaseAdmin
-      .from('customers')
-      .select('id')
-      .eq('id', customer_id)
-      .single()
+    if (!bike_id || !shop_id || !service_id) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
 
-    const { data: vehicle } = await supabaseAdmin
-      .from('vehicles')
-      .select('id')
-      .eq('id', vehicle_id)
+    // Verify bike belongs to customer
+    const { data: bikeData, error: bikeError } = await supabaseAdmin
+      .from('bike')
+      .select('bike_id')
+      .eq('bike_id', bike_id)
       .eq('customer_id', customer_id)
-      .single()
+      .single();
 
-    if (!shop || !customer || !vehicle) {
-      return Response.json(
-        { error: 'Invalid shop, customer, or vehicle' },
-        { status: 400 }
-      )
+    if (bikeError || !bikeData) {
+      return NextResponse.json({ error: 'Bike not found' }, { status: 404 });
+    }
+
+    // Verify service exists at shop
+    const { data: serviceData, error: serviceError } = await supabaseAdmin
+      .from('service')
+      .select('service_id, service_name, base_cost, estimated_time')
+      .eq('service_id', service_id)
+      .eq('shop_id', shop_id)
+      .single();
+
+    if (serviceError || !serviceData) {
+      return NextResponse.json({ error: 'Service not found' }, { status: 404 });
     }
 
     // Create booking
-    const { data: booking, error: bookingError } = await supabaseAdmin
-      .from('bookings')
-      .insert({
-        shop_id,
-        customer_id,
-        vehicle_id,
-        booking_date,
-        booking_time,
-        description: description || '',
-        status: 'pending',
-      })
-      .select()
-
-    if (bookingError) throw bookingError
-
-    if (!booking?.[0]) {
-      throw new Error('Failed to create booking')
-    }
-
-    const bookingId = booking[0].id
-
-    // Add services to booking
-    if (service_ids && Array.isArray(service_ids)) {
-      const bookingServices = await Promise.all(
-        service_ids.map(async (serviceId: string) => {
-          const { data: service } = await supabaseAdmin
-            .from('services')
-            .select('base_price')
-            .eq('id', serviceId)
-            .single()
-
-          return {
-            booking_id: bookingId,
-            service_id: serviceId,
-            price_charged: service?.base_price || 0,
-            quantity: 1,
-          }
-        })
-      )
-
-      const { error: servicesError } = await supabaseAdmin
-        .from('booking_services')
-        .insert(bookingServices)
-
-      if (servicesError) throw servicesError
-    }
-
-    // Calculate estimated cost
-    let estimatedCost = 0
-    if (service_ids && Array.isArray(service_ids)) {
-      const { data: services } = await supabaseAdmin
-        .from('services')
-        .select('base_price')
-        .in('id', service_ids)
-
-      estimatedCost = services?.reduce((sum, s) => sum + (s.base_price || 0), 0) || 0
-    }
-
-    // Update booking with estimated cost
-    await supabaseAdmin
-      .from('bookings')
-      .update({ estimated_cost: estimatedCost })
-      .eq('id', bookingId)
-
-    // Log audit event
-    await logAuditEvent(
-      'booking',
-      bookingId,
-      shop_id,
-      'CREATE_BOOKING',
-      null,
-      { customer_id, vehicle_id, booking_date, status: 'pending' }
-    )
-
-    return Response.json(
-      {
-        message: 'Booking created successfully',
-        booking: {
-          id: bookingId,
-          shop_id,
+    const { data: bookingData, error: bookingError } = await supabaseAdmin
+      .from('booking')
+      .insert([
+        {
           customer_id,
-          vehicle_id,
-          booking_date,
-          booking_time,
+          bike_id,
+          shop_id,
+          service_id,
           status: 'pending',
-          estimated_cost: estimatedCost,
-        },
-      },
-      { status: 201 }
-    )
-  } catch (error: any) {
-    console.error('Booking creation error:', error)
-    return Response.json(
-      { error: error.message || 'Failed to create booking' },
+          service_cost: serviceData.base_cost,
+          created_at: new Date().toISOString()
+        }
+      ])
+      .select('booking_id')
+      .single();
+
+    if (bookingError || !bookingData) {
+      return NextResponse.json(
+        { error: 'Failed to create booking' },
+        { status: 500 }
+      );
+    }
+
+    // Send notification (SMS/Email) - TODO: Implement notification system
+    console.log(`Booking created: ${bookingData.booking_id}`);
+
+    return NextResponse.json({
+      success: true,
+      booking_id: bookingData.booking_id,
+      message: 'Booking created successfully'
+    });
+  } catch (error) {
+    console.error('Error creating booking:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const bookingId = searchParams.get('id')
-    const shopId = searchParams.get('shop_id')
-    const customerId = searchParams.get('customer_id')
+    const authHeader = request.headers.get('Authorization') || '';
+    const token = authHeader.split(' ')[1];
+    const payload = verifyToken(token);
 
-    if (!bookingId && !shopId && !customerId) {
-      return Response.json(
-        { error: 'Provide id, shop_id, or customer_id' },
-        { status: 400 }
-      )
+    if (!payload || payload.role !== 'customer') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    let query = supabaseAdmin.from('bookings').select(`
-      *,
-      shops(name, address, phone_number),
-      customers(name, phone_number, email),
-      vehicles(registration_number, make, model),
-      workers(name, phone_number),
-      booking_services(
-        *,
-        services(name, base_price)
-      )
-    `)
+    const { data: bookings, error } = await supabaseAdmin
+      .from('booking')
+      .select(`
+        booking_id,
+        customer_id,
+        bike_id,
+        shop_id,
+        service_id,
+        status,
+        service_cost,
+        created_at,
+        started_at,
+        completed_at,
+        bike:bike(model),
+        shop:shop(name)
+      `)
+      .eq('customer_id', payload.id)
+      .order('created_at', { ascending: false })
+      .limit(10);
 
-    if (bookingId) {
-      query = query.eq('id', bookingId).single()
-    } else if (shopId) {
-      query = query.eq('shop_id', shopId).order('booking_date', { ascending: false })
-    } else if (customerId) {
-      query = query.eq('customer_id', customerId).order('booking_date', { ascending: false })
+    if (error) {
+      return NextResponse.json(
+        { error: 'Failed to fetch bookings' },
+        { status: 500 }
+      );
     }
 
-    const { data, error } = await query
-
-    if (error) throw error
-
-    return Response.json({ data })
-  } catch (error: any) {
-    console.error('Fetch bookings error:', error)
-    return Response.json(
-      { error: error.message || 'Failed to fetch bookings' },
+    return NextResponse.json({
+      success: true,
+      bookings: bookings || [],
+      totalBookings: bookings?.length || 0
+    });
+  } catch (error) {
+    console.error('Error fetching bookings:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
