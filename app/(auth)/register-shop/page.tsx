@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import {
   User,
@@ -19,17 +20,83 @@ import { Textarea } from "@/components/ui/textarea"
 import { AuthCard } from "@/components/auth/auth-card"
 
 export default function RegisterShopPage() {
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [selfieFile, setSelfieFile] = useState<File | null>(null)
+  const [error, setError] = useState("")
+  const [isClientReady, setIsClientReady] = useState(false)
+
+  const [formData, setFormData] = useState({
+    ownerName: "",
+    ownerEmail: "",
+    ownerPhone: "",
+    shopName: "",
+    shopAddress: "",
+    shopCity: "",
+    aadhaar: "",
+  })
+
+  // Load page on client side
+  useEffect(() => {
+    setIsClientReady(true)
+  }, [])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    console.log("Form submitted!")
+    console.log("Form data:", formData)
+    
     setIsLoading(true)
-    // Will integrate with Supabase later
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    setIsLoading(false)
-    setSubmitted(true)
+    setError("")
+
+    try {
+      // Validate required fields
+      if (!formData.shopName || !formData.ownerName || !formData.ownerEmail || !formData.ownerPhone || !formData.shopAddress || !formData.shopCity) {
+        const errorMsg = "Please fill in all required fields"
+        setError(errorMsg)
+        console.error(errorMsg)
+        setIsLoading(false)
+        return
+      }
+
+      console.log("Submitting application...")
+
+      // Send ONLY the fields the API needs
+      const response = await fetch("/api/shops/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          owner_name: formData.ownerName,
+          email: formData.ownerEmail, // owner email
+          phone_number: formData.ownerPhone, // owner phone
+          name: formData.shopName, // shop name
+          address: formData.shopAddress,
+          city: formData.shopCity,
+          aadhaar: formData.aadhaar,
+        }),
+      })
+
+      console.log("API Response Status:", response.status)
+
+      const data = await response.json()
+      console.log("API Response Data:", data)
+
+      if (!response.ok) {
+        setError(data.error || "Failed to submit application")
+        setIsLoading(false)
+        console.error("API Error:", data.error)
+        return
+      }
+
+      console.log("Application submitted successfully!")
+      setSubmitted(true)
+    } catch (err) {
+      const errorMsg = "An error occurred. Please try again."
+      setError(errorMsg)
+      console.error("Submit error:", err)
+      setIsLoading(false)
+    }
   }
 
   if (submitted) {
@@ -74,6 +141,12 @@ export default function RegisterShopPage() {
       description="Apply to list your motorcycle service shop on the platform"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="rounded-md bg-red-50 p-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
         {/* Section: Owner Details */}
         <div className="mb-2">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -93,6 +166,9 @@ export default function RegisterShopPage() {
               className="pl-10"
               required
               autoComplete="name"
+              value={formData.ownerName}
+              onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })}
+              disabled={isLoading}
             />
           </div>
         </div>
@@ -109,6 +185,9 @@ export default function RegisterShopPage() {
               className="pl-10"
               required
               autoComplete="email"
+              value={formData.ownerEmail}
+              onChange={(e) => setFormData({ ...formData, ownerEmail: e.target.value })}
+              disabled={isLoading}
             />
           </div>
         </div>
@@ -125,6 +204,9 @@ export default function RegisterShopPage() {
               className="pl-10"
               required
               autoComplete="tel"
+              value={formData.ownerPhone}
+              onChange={(e) => setFormData({ ...formData, ownerPhone: e.target.value })}
+              disabled={isLoading}
             />
           </div>
         </div>
@@ -146,6 +228,7 @@ export default function RegisterShopPage() {
               accept="image/*"
               className="hidden"
               onChange={(e) => setSelfieFile(e.target.files?.[0] ?? null)}
+              disabled={isLoading}
             />
           </div>
         </div>
@@ -168,6 +251,9 @@ export default function RegisterShopPage() {
               placeholder="Your service shop name"
               className="pl-10"
               required
+              value={formData.shopName}
+              onChange={(e) => setFormData({ ...formData, shopName: e.target.value })}
+              disabled={isLoading}
             />
           </div>
         </div>
@@ -179,11 +265,28 @@ export default function RegisterShopPage() {
             <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Textarea
               id="shopAddress"
-              placeholder="Full address including city, state, and PIN code"
+              placeholder="Full address including street"
               className="min-h-20 pl-10"
               required
+              value={formData.shopAddress}
+              onChange={(e) => setFormData({ ...formData, shopAddress: e.target.value })}
+              disabled={isLoading}
             />
           </div>
+        </div>
+
+        {/* City */}
+        <div className="space-y-2">
+          <Label htmlFor="shopCity">City</Label>
+          <Input
+            id="shopCity"
+            type="text"
+            placeholder="City name"
+            required
+            value={formData.shopCity}
+            onChange={(e) => setFormData({ ...formData, shopCity: e.target.value })}
+            disabled={isLoading}
+          />
         </div>
 
         {/* Aadhaar (optional) */}
@@ -197,7 +300,9 @@ export default function RegisterShopPage() {
               placeholder="XXXX XXXX XXXX"
               className="pl-10"
               maxLength={14}
-              pattern="\d{4}\s?\d{4}\s?\d{4}"
+              value={formData.aadhaar}
+              onChange={(e) => setFormData({ ...formData, aadhaar: e.target.value })}
+              disabled={isLoading}
             />
           </div>
           <p className="text-xs text-muted-foreground">

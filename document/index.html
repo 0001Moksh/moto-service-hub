@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MetaDATA • Bike Service Schema</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+
+        :root {
+            --accent: 134 76 61;
+        }
+
+        .tail-container {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+
+        .logo-font {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .mermaid {
+            background: #18181b;
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card-hover:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        .sql-code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            background: #27272a;
+            border-radius: 12px;
+        }
+
+        .pk {
+            color: #4ade80;
+        }
+
+        .fk {
+            color: #60a5fa;
+        }
+
+        details summary {
+            list-style: none;
+        }
+
+        details summary::-webkit-details-marker {
+            display: none;
+        }
+    </style>
+</head>
+
+<body class="tail-container bg-zinc-950 text-zinc-200">
+    <!-- NAVBAR -->
+    <nav class="border-b border-zinc-800 bg-zinc-950 sticky top-0 z-50">
+        <div class="max-w-screen-2xl mx-auto px-8 py-5 flex items-center justify-between">
+            <div class="flex items-center gap-x-3">
+
+                <div>
+                    <span class="text-2xl font-semibold tracking-tighter logo-font text-white">Moto Service Hub</span>
+                </div>
+            </div>
+            <div
+                class="flex items-center gap-x-2 text-xs uppercase tracking-widest bg-zinc-900 px-4 py-2 rounded-3xl border border-zinc-700">
+                <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                <div class="flex items-center gap-x-8 text-sm font-medium">
+                    <a href="#diagram"
+                        onclick="document.getElementById('diagram').scrollIntoView({ behavior: 'smooth' })"
+                        class="hover:text-emerald-400 transition-colors">ER Diagram flow Chart</a>
+
+                </div>
+            </div>
+            <div
+                class="flex items-center gap-x-2 text-xs uppercase tracking-widest bg-zinc-900 px-4 py-2 rounded-3xl border border-zinc-700">
+                <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                <div class="flex items-center gap-x-8 text-sm font-medium">
+
+                    <a href="#tables" onclick="document.getElementById('tables').scrollIntoView({ behavior: 'smooth' })"
+                        class="hover:text-emerald-400 transition-colors">Tables</a>
+                </div>
+            </div>
+            <div
+                class="flex items-center gap-x-2 text-xs uppercase tracking-widest bg-zinc-900 px-4 py-2 rounded-3xl border border-zinc-700">
+                <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                <div class="flex items-center gap-x-8 text-sm font-medium">
+                    <a href="#one-drive" onclick="document.getElementById('one-drive').scrollIntoView({ behavior: 'smooth' })"
+                        class="hover:text-emerald-400 transition-colors">One Drive Schema</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <header class="pt-24 pb-16 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black border-b border-zinc-800">
+        <div class="max-w-screen-2xl mx-auto px-8">
+            <div class="flex flex-col items-center text-center max-w-3xl mx-auto">
+                <div
+                    class="inline-flex items-center gap-x-2 bg-emerald-950 text-emerald-400 text-xs font-medium px-5 py-2 rounded-3xl mb-6">
+                    <i class="fa-solid fa-database"></i>
+                    BIKE SERVICE MANAGEMENT SYSTEM
+                </div>
+                <h1 class="text-7xl font-bold tracking-tighter logo-font text-white leading-none mb-4">
+                    Schema for<br><span class="text-emerald-400">MetaDATA</span>
+                </h1>
+                <p class="text-xl text-zinc-400 max-w-md">
+                    Complete PostgreSQL database schema for a modern bike service &amp; repair platform
+                </p>
+                <div class="flex items-center gap-x-8 mt-10 text-sm">
+                    <div class="flex items-center gap-x-2">
+                        <span class="text-emerald-300 font-mono">13 tables</span>
+                    </div>
+                    <div class="flex items-center gap-x-2">
+                        <div class="w-px h-6 bg-zinc-700"></div>
+                        <span class="text-emerald-300 font-mono">28 relationships</span>
+                    </div>
+                    <div class="flex items-center gap-x-2">
+                        <div class="w-px h-6 bg-zinc-700"></div>
+                        <span class="text-emerald-300 font-mono">Production ready</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ER DIAGRAM -->
+    <section id="diagram" class="max-w-screen-2xl mx-auto px-8 py-20 bg-zinc-900">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-12">
+                <h2 class="text-5xl font-semibold tracking-tight text-white mt-3">Entity Relationship Diagram</h2>
+            </div>
+
+            <div class="mermaid bg-zinc-950 p-10 rounded-3xl shadow-2xl border border-zinc-800">
+                erDiagram
+                OWNER ||--o{ SHOP : "owns"
+                SHOP ||--o{ WORKER : "employs"
+                SHOP ||--o{ HOLIDAY_CALENDAR : "has"
+                SHOP ||--o{ BOOKING : "hosts"
+                SHOP ||--o{ JOB : "hosts"
+                SHOP ||--o{ SERVICE : "provides"
+                WORKER ||--o{ BOOKING : "assigned"
+                WORKER ||--o{ JOB : "performs"
+                WORKER ||--o{ SERVICE : "performs"
+                WORKER ||--o{ WORKER_AVAILABILITY : "has"
+                CUSTOMER ||--o{ BIKE : "owns"
+                CUSTOMER ||--o{ BOOKING : "creates"
+                BIKE ||--o{ BOOKING : "used_in"
+                BIKE ||--o{ JOB : "serviced"
+                BIKE ||--o{ SERVICE : "serviced"
+                BOOKING ||--o{ JOB : "generates"
+                BOOKING ||--o{ SERVICE : "generates"
+                REQUEST ||--o{ SHOP : "requests"
+                ADMIN ||--o{ DOCUMENT : "manages"
+                DOCUMENT }o--|| OWNER : "belongs_to"
+                DOCUMENT }o--|| WORKER : "belongs_to"
+                DOCUMENT }o--|| CUSTOMER : "belongs_to"
+            </div>
+
+        </div>
+    </section>
+
+    <!-- TABLES -->
+    <section id="tables" class="max-w-screen-2xl mx-auto px-8 py-20">
+        <div class="mb-12">
+            <h2 class="text-5xl font-semibold tracking-tight text-white mt-3">All 13 Tables</h2>
+        </div>
+
+        <div class="space-y-8">
+            <!-- OWNER -->
+            <details class="group bg-zinc-900 rounded-3xl border border-zinc-800 overflow-hidden">
+                <summary
+                    class="px-8 py-6 flex items-center justify-between cursor-pointer hover:bg-zinc-800 transition-colors">
+                    <div class="flex items-center gap-x-4">
+                        <span class="text-2xl">👤</span>
+                        <div>
+                            <span class="font-mono text-xl font-semibold text-white">owner</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-zinc-400 group-open:rotate-180 transition-transform"></i>
+                </summary>
+                <div class="px-8 pb-8">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-zinc-700">
+                                <th class="py-4 text-left font-medium text-zinc-400">Column</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Type</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Key</th>
+                            </tr>
+                        </thead>
+                        <tbody class="font-mono divide-y divide-zinc-800">
+                            <tr>
+                                <td class="py-4">owner_id</td>
+                                <td>SERIAL</td>
+                                <td class="pk">PK</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">mail</td>
+                                <td>VARCHAR(255)</td>
+                                <td class="text-amber-300">UNIQUE</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">password</td>
+                                <td>VARCHAR(255)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">phone</td>
+                                <td>VARCHAR(15)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">aadhaar_card</td>
+                                <td>VARCHAR(12)</td>
+                                <td class="text-amber-300">UNIQUE</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">picture</td>
+                                <td>TEXT</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+
+            <!-- SHOP -->
+            <details class="group bg-zinc-900 rounded-3xl border border-zinc-800 overflow-hidden">
+                <summary
+                    class="px-8 py-6 flex items-center justify-between cursor-pointer hover:bg-zinc-800 transition-colors">
+                    <div class="flex items-center gap-x-4">
+                        <span class="text-2xl">🏪</span>
+                        <div>
+                            <span class="font-mono text-xl font-semibold text-white">shop</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-zinc-400 group-open:rotate-180 transition-transform"></i>
+                </summary>
+                <div class="px-8 pb-8">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-zinc-700">
+                                <th class="py-4 text-left font-medium text-zinc-400">Column</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Type</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Key</th>
+                            </tr>
+                        </thead>
+                        <tbody class="font-mono divide-y divide-zinc-800">
+                            <tr>
+                                <td class="py-4">shop_id</td>
+                                <td>SERIAL</td>
+                                <td class="pk">PK</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">owner_id</td>
+                                <td>INTEGER</td>
+                                <td class="fk">FK → owner</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">location</td>
+                                <td>TEXT</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">location_link</td>
+                                <td>TEXT</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">worker_id_array</td>
+                                <td>INTEGER[]</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">revenue</td>
+                                <td>NUMERIC(15,2)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">rating</td>
+                                <td>NUMERIC(3,2)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">picture_array</td>
+                                <td>TEXT[]</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">holiday_calendar_id</td>
+                                <td>INTEGER</td>
+                                <td class="fk">FK → holiday_calendar</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+
+                </div>
+            </details>
+
+            <!-- WORKER -->
+            <details class="group bg-zinc-900 rounded-3xl border border-zinc-800 overflow-hidden">
+                <summary
+                    class="px-8 py-6 flex items-center justify-between cursor-pointer hover:bg-zinc-800 transition-colors">
+                    <div class="flex items-center gap-x-4">
+                        <span class="text-2xl">🔧</span>
+                        <div>
+                            <span class="font-mono text-xl font-semibold text-white">worker</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-zinc-400 group-open:rotate-180 transition-transform"></i>
+                </summary>
+                <div class="px-8 pb-8">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-zinc-700">
+                                <th class="py-4 text-left font-medium text-zinc-400">Column</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Type</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Key</th>
+                            </tr>
+                        </thead>
+                        <tbody class="font-mono divide-y divide-zinc-800">
+                            <tr>
+                                <td class="py-4">worker_id</td>
+                                <td>SERIAL</td>
+                                <td class="pk">PK</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">shop_id</td>
+                                <td>INTEGER</td>
+                                <td class="fk">FK → shop</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">mail</td>
+                                <td>VARCHAR(255)</td>
+                                <td class="text-amber-300">UNIQUE</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">password</td>
+                                <td>VARCHAR(255)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">age</td>
+                                <td>INTEGER</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">aadhaar_card</td>
+                                <td>VARCHAR(12)</td>
+                                <td class="text-amber-300">UNIQUE</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">rating</td>
+                                <td>NUMERIC(3,2)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">total</td>
+                                <td>NUMERIC(15,2)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">service</td>
+                                <td>INTEGER</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">booking</td>
+                                <td>INTEGER</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">revenue</td>
+                                <td>NUMERIC(15,2)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">performance_score</td>
+                                <td>NUMERIC(5,2)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">picture</td>
+                                <td>TEXT</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+
+                </div>
+            </details>
+
+            <!-- CUSTOMER -->
+            <details class="group bg-zinc-900 rounded-3xl border border-zinc-800 overflow-hidden">
+                <summary
+                    class="px-8 py-6 flex items-center justify-between cursor-pointer hover:bg-zinc-800 transition-colors">
+                    <div class="flex items-center gap-x-4">
+                        <span class="text-2xl">👨‍💼</span>
+                        <div>
+                            <span class="font-mono text-xl font-semibold text-white">customer</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-zinc-400 group-open:rotate-180 transition-transform"></i>
+                </summary>
+                <div class="px-8 pb-8">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-zinc-700">
+                                <th class="py-4 text-left font-medium text-zinc-400">Column</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Type</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Key</th>
+                            </tr>
+                        </thead>
+                        <tbody class="font-mono divide-y divide-zinc-800">
+                            <tr>
+                                <td class="py-4">customer_id</td>
+                                <td>SERIAL</td>
+                                <td class="pk">PK</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">mail</td>
+                                <td>VARCHAR(255)</td>
+                                <td class="text-amber-300">UNIQUE</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">password</td>
+                                <td>VARCHAR(255)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">aadhaar_card</td>
+                                <td>VARCHAR(12)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">bike_id_array</td>
+                                <td>INTEGER[]</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">rating</td>
+                                <td>NUMERIC(3,2)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">token</td>
+                                <td>TEXT</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">preferance_score</td>
+                                <td>NUMERIC(5,2)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">token_regenerated_at</td>
+                                <td>TIMESTAMP</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">created_at</td>
+                                <td>TIMESTAMP</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">picture</td>
+                                <td>TEXT</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">location</td>
+                                <td>TEXT</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+
+                </div>
+            </details>
+
+            <!-- BIKE -->
+            <details class="group bg-zinc-900 rounded-3xl border border-zinc-800 overflow-hidden">
+                <summary
+                    class="px-8 py-6 flex items-center justify-between cursor-pointer hover:bg-zinc-800 transition-colors">
+                    <div class="flex items-center gap-x-4">
+                        <span class="text-2xl">🏍️</span>
+                        <div>
+                            <span class="font-mono text-xl font-semibold text-white">bike</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-zinc-400 group-open:rotate-180 transition-transform"></i>
+                </summary>
+                <div class="px-8 pb-8">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-zinc-700">
+                                <th class="py-4 text-left font-medium text-zinc-400">Column</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Type</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Key</th>
+                            </tr>
+                        </thead>
+                        <tbody class="font-mono divide-y divide-zinc-800">
+                            <tr>
+                                <td class="py-4">bike_id</td>
+                                <td>SERIAL</td>
+                                <td class="pk">PK</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">reg_number</td>
+                                <td>VARCHAR(20)</td>
+                                <td class="text-amber-300">UNIQUE</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">regn_number</td>
+                                <td>VARCHAR(20)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">owner_name</td>
+                                <td>VARCHAR(255)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">owner_id</td>
+                                <td>INTEGER</td>
+                                <td class="fk">FK → customer</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">regn_date</td>
+                                <td>DATE</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">color</td>
+                                <td>VARCHAR(50)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">fuel</td>
+                                <td>VARCHAR(50)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">vehicle_class</td>
+                                <td>VARCHAR(50)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">body_type</td>
+                                <td>VARCHAR(50)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">manufacturer</td>
+                                <td>VARCHAR(100)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">chassis_no</td>
+                                <td>VARCHAR(50)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">enginee</td>
+                                <td>VARCHAR(50)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">model_no</td>
+                                <td>VARCHAR(50)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">manufacture_date</td>
+                                <td>DATE</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">refid_validity</td>
+                                <td>DATE</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">address</td>
+                                <td>TEXT</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">picture_array</td>
+                                <td>TEXT[]</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </div>
+            </details>
+
+            <!-- REQUEST -->
+            <details class="group bg-zinc-900 rounded-3xl border border-zinc-800 overflow-hidden">
+                <summary
+                    class="px-8 py-6 flex items-center justify-between cursor-pointer hover:bg-zinc-800 transition-colors">
+                    <div class="flex items-center gap-x-4">
+                        <span class="text-2xl">📝</span>
+                        <div>
+                            <span class="font-mono text-xl font-semibold text-white">request</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-zinc-400 group-open:rotate-180 transition-transform"></i>
+                </summary>
+                <div class="px-8 pb-8">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-zinc-700">
+                                <th class="py-4 text-left font-medium text-zinc-400">Column</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Type</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Key</th>
+                            </tr>
+                        </thead>
+                        <tbody class="font-mono divide-y divide-zinc-800">
+                            <tr>
+                                <td class="py-4">request_id</td>
+                                <td>SERIAL</td>
+                                <td class="pk">PK</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">owner_name</td>
+                                <td>VARCHAR(255)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">shop_name</td>
+                                <td>VARCHAR(255)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">phone_number</td>
+                                <td>VARCHAR(15)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">location</td>
+                                <td>TEXT</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">aadhaar_card_photo</td>
+                                <td>TEXT</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">status</td>
+                                <td>VARCHAR(50)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">created_at</td>
+                                <td>TIMESTAMP</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+
+                </div>
+            </details>
+
+            <!-- BOOKING -->
+            <details class="group bg-zinc-900 rounded-3xl border border-zinc-800 overflow-hidden">
+                <summary
+                    class="px-8 py-6 flex items-center justify-between cursor-pointer hover:bg-zinc-800 transition-colors">
+                    <div class="flex items-center gap-x-4">
+                        <span class="text-2xl">📅</span>
+                        <div>
+                            <span class="font-mono text-xl font-semibold text-white">booking</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-zinc-400 group-open:rotate-180 transition-transform"></i>
+                </summary>
+                <div class="px-8 pb-8">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-zinc-700">
+                                <th class="py-4 text-left font-medium text-zinc-400">Column</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Type</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Key</th>
+                            </tr>
+                        </thead>
+                        <tbody class="font-mono divide-y divide-zinc-800">
+                            <tr>
+                                <td class="py-4">booking_id</td>
+                                <td>SERIAL</td>
+                                <td class="pk">PK</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">created_at</td>
+                                <td>TIMESTAMP</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">customer_id</td>
+                                <td>INTEGER</td>
+                                <td class="fk">FK → customer</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">bike_id</td>
+                                <td>INTEGER</td>
+                                <td class="fk">FK → bike</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">booking_trust</td>
+                                <td>BOOLEAN</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">issue_from_customer</td>
+                                <td>TEXT</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">shop_id</td>
+                                <td>INTEGER</td>
+                                <td class="fk">FK → shop</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">worker_id</td>
+                                <td>INTEGER</td>
+                                <td class="fk">FK → worker</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">status</td>
+                                <td>VARCHAR(50)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">cancelled_description</td>
+                                <td>TEXT</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">customer_scope_status</td>
+                                <td>VARCHAR(50)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">service_at</td>
+                                <td>TIMESTAMP</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+
+                </div>
+            </details>
+
+            <!-- JOB -->
+            <details class="group bg-zinc-900 rounded-3xl border border-zinc-800 overflow-hidden">
+                <summary
+                    class="px-8 py-6 flex items-center justify-between cursor-pointer hover:bg-zinc-800 transition-colors">
+                    <div class="flex items-center gap-x-4">
+                        <span class="text-2xl">⚙️</span>
+                        <div>
+                            <span class="font-mono text-xl font-semibold text-white">job</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-zinc-400 group-open:rotate-180 transition-transform"></i>
+                </summary>
+                <div class="px-8 pb-8">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-zinc-700">
+                                <th class="py-4 text-left font-medium text-zinc-400">Column</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Type</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Key</th>
+                            </tr>
+                        </thead>
+                        <tbody class="font-mono divide-y divide-zinc-800">
+                            <tr>
+                                <td class="py-4">job_id</td>
+                                <td>SERIAL</td>
+                                <td class="pk">PK</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">bike_id</td>
+                                <td>INTEGER</td>
+                                <td class="fk">FK → bike</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">shope_id</td>
+                                <td>INTEGER</td>
+                                <td class="fk">FK → shop</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">worker_id</td>
+                                <td>INTEGER</td>
+                                <td class="fk">FK → worker</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">customer_id</td>
+                                <td>INTEGER</td>
+                                <td class="fk">FK → customer</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">issue_from_customer</td>
+                                <td>TEXT</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">issue_from_worker</td>
+                                <td>TEXT</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">status</td>
+                                <td>VARCHAR(50)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">new_part_insert_json</td>
+                                <td>JSONB</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">cancelled_description</td>
+                                <td>TEXT</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">start_time</td>
+                                <td>TIMESTAMP</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">end_time</td>
+                                <td>TIMESTAMP</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">bill</td>
+                                <td>NUMERIC(15,2)</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+
+                </div>
+            </details>
+
+            <!-- SERVICE -->
+            <details class="group bg-zinc-900 rounded-3xl border border-zinc-800 overflow-hidden">
+                <summary
+                    class="px-8 py-6 flex items-center justify-between cursor-pointer hover:bg-zinc-800 transition-colors">
+                    <div class="flex items-center gap-x-4">
+                        <span class="text-2xl">🛠️</span>
+                        <div>
+                            <span class="font-mono text-xl font-semibold text-white">service</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-zinc-400 group-open:rotate-180 transition-transform"></i>
+                </summary>
+                <div class="px-8 pb-8">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-zinc-700">
+                                <th class="py-4 text-left font-medium text-zinc-400">Column</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Type</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Key</th>
+                            </tr>
+                        </thead>
+                        <tbody class="font-mono divide-y divide-zinc-800">
+                            <tr>
+                                <td class="py-4">service_id</td>
+                                <td>SERIAL</td>
+                                <td class="pk">PK</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">booking_created_at</td>
+                                <td>TIMESTAMP</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">created_time</td>
+                                <td>TIMESTAMP</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">customer_id</td>
+                                <td>INTEGER</td>
+                                <td class="fk">FK → customer</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">bike_id</td>
+                                <td>INTEGER</td>
+                                <td class="fk">FK → bike</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">booking_trust</td>
+                                <td>BOOLEAN</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">issue_from_customer</td>
+                                <td>TEXT</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">issue_from_worker</td>
+                                <td>TEXT</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">shop_id</td>
+                                <td>INTEGER</td>
+                                <td class="fk">FK → shop</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">worker_id</td>
+                                <td>INTEGER</td>
+                                <td class="fk">FK → worker</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">duration</td>
+                                <td>INTEGER</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">start_at</td>
+                                <td>TIMESTAMP</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">end_at</td>
+                                <td>TIMESTAMP</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">bill</td>
+                                <td>NUMERIC(15,2)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">new_part_insert_json</td>
+                                <td>JSONB</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">rating</td>
+                                <td>NUMERIC(3,2)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">payement_status</td>
+                                <td>VARCHAR(50)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">status</td>
+                                <td>VARCHAR(50)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">cancelled_description</td>
+                                <td>TEXT</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">invoice_json</td>
+                                <td>JSONB</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+
+                </div>
+            </details>
+
+            <!-- DOCUMENT -->
+            <details class="group bg-zinc-900 rounded-3xl border border-zinc-800 overflow-hidden">
+                <summary
+                    class="px-8 py-6 flex items-center justify-between cursor-pointer hover:bg-zinc-800 transition-colors">
+                    <div class="flex items-center gap-x-4">
+                        <span class="text-2xl">📄</span>
+                        <div>
+                            <span class="font-mono text-xl font-semibold text-white">document</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-zinc-400 group-open:rotate-180 transition-transform"></i>
+                </summary>
+                <div class="px-8 pb-8">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-zinc-700">
+                                <th class="py-4 text-left font-medium text-zinc-400">Column</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Type</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Key</th>
+                            </tr>
+                        </thead>
+                        <tbody class="font-mono divide-y divide-zinc-800">
+                            <tr>
+                                <td class="py-4">document_id</td>
+                                <td>SERIAL</td>
+                                <td class="pk">PK</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">document_name</td>
+                                <td>VARCHAR(255)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">created_at</td>
+                                <td>TIMESTAMP</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">document_path</td>
+                                <td>TEXT</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">document_by_role</td>
+                                <td>VARCHAR(50)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">role_id</td>
+                                <td>INTEGER</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+
+                </div>
+            </details>
+
+            <!-- ADMIN -->
+            <details class="group bg-zinc-900 rounded-3xl border border-zinc-800 overflow-hidden">
+                <summary
+                    class="px-8 py-6 flex items-center justify-between cursor-pointer hover:bg-zinc-800 transition-colors">
+                    <div class="flex items-center gap-x-4">
+                        <span class="text-2xl">👨‍💻</span>
+                        <div>
+                            <span class="font-mono text-xl font-semibold text-white">admin</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-zinc-400 group-open:rotate-180 transition-transform"></i>
+                </summary>
+                <div class="px-8 pb-8">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-zinc-700">
+                                <th class="py-4 text-left font-medium text-zinc-400">Column</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Type</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Key</th>
+                            </tr>
+                        </thead>
+                        <tbody class="font-mono divide-y divide-zinc-800">
+                            <tr>
+                                <td class="py-4">admin_id</td>
+                                <td>SERIAL</td>
+                                <td class="pk">PK</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">mail</td>
+                                <td>VARCHAR(255)</td>
+                                <td class="text-amber-300">UNIQUE</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">password</td>
+                                <td>VARCHAR(255)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">support_mail</td>
+                                <td>VARCHAR(255)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">phone_number</td>
+                                <td>VARCHAR(15)</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">picture</td>
+                                <td>TEXT</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+
+                </div>
+            </details>
+
+            <!-- HOLIDAY_CALENDAR -->
+            <details class="group bg-zinc-900 rounded-3xl border border-zinc-800 overflow-hidden">
+                <summary
+                    class="px-8 py-6 flex items-center justify-between cursor-pointer hover:bg-zinc-800 transition-colors">
+                    <div class="flex items-center gap-x-4">
+                        <span class="text-2xl">🗓️</span>
+                        <div>
+                            <span class="font-mono text-xl font-semibold text-white">holiday_calendar</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-zinc-400 group-open:rotate-180 transition-transform"></i>
+                </summary>
+                <div class="px-8 pb-8">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-zinc-700">
+                                <th class="py-4 text-left font-medium text-zinc-400">Column</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Type</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Key</th>
+                            </tr>
+                        </thead>
+                        <tbody class="font-mono divide-y divide-zinc-800">
+                            <tr>
+                                <td class="py-4">holiday_calendar_id</td>
+                                <td>SERIAL</td>
+                                <td class="pk">PK</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">shop_id</td>
+                                <td>INTEGER</td>
+                                <td class="fk">FK → shop</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">created_at</td>
+                                <td>TIMESTAMP</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">event_holiday_dated</td>
+                                <td>DATE[]</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">recurring_days_off</td>
+                                <td>INTEGER[]</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">updated_at</td>
+                                <td>TIMESTAMP</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+
+                </div>
+            </details>
+
+            <!-- WORKER_AVAILABILITY -->
+            <details class="group bg-zinc-900 rounded-3xl border border-zinc-800 overflow-hidden">
+                <summary
+                    class="px-8 py-6 flex items-center justify-between cursor-pointer hover:bg-zinc-800 transition-colors">
+                    <div class="flex items-center gap-x-4">
+                        <span class="text-2xl">⏰</span>
+                        <div>
+                            <span class="font-mono text-xl font-semibold text-white">worker_availability</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-zinc-400 group-open:rotate-180 transition-transform"></i>
+                </summary>
+                <div class="px-8 pb-8">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-zinc-700">
+                                <th class="py-4 text-left font-medium text-zinc-400">Column</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Type</th>
+                                <th class="py-4 text-left font-medium text-zinc-400">Key</th>
+                            </tr>
+                        </thead>
+                        <tbody class="font-mono divide-y divide-zinc-800">
+                            <tr>
+                                <td class="py-4">worker_id</td>
+                                <td>INTEGER</td>
+                                <td class="fk">FK → worker</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">busy_from</td>
+                                <td>TIMESTAMP</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">busy_till</td>
+                                <td>TIMESTAMP</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">bike_id</td>
+                                <td>INTEGER</td>
+                                <td class="fk">FK → bike</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4">shope_id</td>
+                                <td>INTEGER</td>
+                                <td class="fk">FK → shop</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+
+                </div>
+            </details>
+
+        </div>
+    </section>
+
+    <!-- ONE DRIVE SCHEMA -->
+    <section id="one-drive" class="max-w-screen-2xl mx-auto px-8 py-20 bg-zinc-900">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-12">
+                <h2 class="text-5xl font-semibold tracking-tight text-white mt-3">One Drive Schema ER Diagram</h2>
+                <p class="text-zinc-400 mt-4">Distributed file storage and document management system architecture</p>
+            </div>
+
+            <div class="mermaid bg-zinc-950 p-10 rounded-3xl shadow-2xl border border-zinc-800">
+                erDiagram
+                WORKER ||--o{ WORKER_ID : "has"
+                SHOP ||--o{ SHOP_ID : "maintains"
+                SHOP ||--o{ SHOP_IMG : "uploads"
+                CUSTOMER ||--o{ CUSTOMER_ID : "owns"
+                BIKE ||--o{ BIKE_ID : "registered"
+                BIKE ||--o{ BIKE_IMG : "stores"
+                OWNER ||--o{ OWNER_ID : "manages"
+                OWNER ||--o{ PROFILE_PIC : "uploads"
+                CUSTOMER_ID ||--o{ PROFILE_PIC : "associated"
+                DOCUMENT ||--o{ OWNER : "belongs_to"
+                DOCUMENT ||--o{ WORKER : "belongs_to"
+                DOCUMENT ||--o{ CUSTOMER : "belongs_to"
+                REQUEST ||--o{ SHOP : "directed_to"
+            </div>
+
+            <div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-zinc-900 rounded-2xl border border-zinc-800 p-8">
+                    <h3 class="text-xl font-semibold text-white mb-4 flex items-center gap-x-2">
+                        <span>📁</span>
+                        Core Entities
+                    </h3>
+                    <ul class="space-y-3 text-zinc-300 text-sm">
+                        <li class="flex items-center gap-x-2"><span class="text-emerald-400">•</span> Worker ID Lists</li>
+                        <li class="flex items-center gap-x-2"><span class="text-emerald-400">•</span> Shop Profiles & Images</li>
+                        <li class="flex items-center gap-x-2"><span class="text-emerald-400">•</span> Customer Information</li>
+                        <li class="flex items-center gap-x-2"><span class="text-emerald-400">•</span> Bike Registry & Images</li>
+                        <li class="flex items-center gap-x-2"><span class="text-emerald-400">•</span> Owner Profiles & Pictures</li>
+                    </ul>
+                </div>
+
+                <div class="bg-zinc-900 rounded-2xl border border-zinc-800 p-8">
+                    <h3 class="text-xl font-semibold text-white mb-4 flex items-center gap-x-2">
+                        <span>🔗</span>
+                        Document Storage
+                    </h3>
+                    <ul class="space-y-3 text-zinc-300 text-sm">
+                        <li class="flex items-center gap-x-2"><span class="text-emerald-400">•</span> Aadhar Card Profiles</li>
+                        <li class="flex items-center gap-x-2"><span class="text-emerald-400">•</span> Document Management</li>
+                        <li class="flex items-center gap-x-2"><span class="text-emerald-400">•</span> Multi-entity Documentation</li>
+                        <li class="flex items-center gap-x-2"><span class="text-emerald-400">•</span> Service Requests Storage</li>
+                        <li class="flex items-center gap-x-2"><span class="text-emerald-400">•</span> Centralized Profile Pictures</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Tailwind script already loaded via CDN
+        // Mermaid initialization
+        mermaid.initialize({
+            theme: "dark",
+            startOnLoad: true,
+            flowchart: { useMaxWidth: true },
+            erDiagram: { useMaxWidth: true }
+        });
+
+        // Smooth scrolling for nav
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
