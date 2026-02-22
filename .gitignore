@@ -12,6 +12,7 @@ node_modules/
 # Note: .env.production contains    only public config and should be committed
 .env.development
 .env.example
+.env.production
 .env.local
 *.log
 *.sql
