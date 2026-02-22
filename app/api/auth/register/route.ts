@@ -1,6 +1,8 @@
 import { supabase, supabaseAdmin } from '@/lib/supabase'
 import { createCustomer, logAuditEvent } from '@/lib/supabase-helpers'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()
