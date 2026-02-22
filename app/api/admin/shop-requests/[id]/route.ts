@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { sendShopApprovalEmail } from '@/lib/supabase-helpers'
 
+// Prevent static generation - this route requires database access
+export const dynamic = 'force-dynamic'
+
 function generateShopSlug(shopName: string): string {
   return shopName
     .toLowerCase()
