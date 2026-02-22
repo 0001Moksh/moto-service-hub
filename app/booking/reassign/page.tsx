@@ -33,7 +33,7 @@ interface ReassignmentData {
   estimated_arrival_minutes?: number;
 }
 
-export default function ReassignWorker() {
+function ReassignWorkerContent() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -276,5 +276,13 @@ export default function ReassignWorker() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ReassignWorker() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ReassignWorkerContent />
+    </Suspense>
   );
 }

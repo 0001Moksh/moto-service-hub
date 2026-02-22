@@ -29,7 +29,7 @@ interface ServiceProgress {
   available_extra_services: ExtraService[];
 }
 
-export default function ServiceProgress() {
+function ServiceProgressContent() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -331,5 +331,13 @@ export default function ServiceProgress() {
         </Button>
       </div>
     </div>
+  );
+}
+
+export default function ServiceProgress() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ServiceProgressContent />
+    </Suspense>
   );
 }

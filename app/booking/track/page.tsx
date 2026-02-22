@@ -42,7 +42,7 @@ const statusConfig = {
   cancelled: { label: 'Cancelled', color: 'bg-red-500', icon: '✗' }
 };
 
-export default function TrackBooking() {
+function TrackBookingContent() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -294,5 +294,13 @@ export default function TrackBooking() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TrackBooking() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <TrackBookingContent />
+    </Suspense>
   );
 }

@@ -34,7 +34,7 @@ interface InvoiceData {
   }>;
 }
 
-export default function InvoicePage() {
+function InvoicePageContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const bookingId = searchParams.get('booking_id');
@@ -271,5 +271,13 @@ export default function InvoicePage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function InvoicePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <InvoicePageContent />
+    </Suspense>
   );
 }

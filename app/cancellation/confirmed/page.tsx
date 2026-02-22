@@ -20,7 +20,7 @@ interface CancellationConfirmation {
   reason: string;
 }
 
-export default function CancellationConfirmed() {
+function CancellationConfirmedContent() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -214,5 +214,13 @@ export default function CancellationConfirmed() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function CancellationConfirmed() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CancellationConfirmedContent />
+    </Suspense>
   );
 }

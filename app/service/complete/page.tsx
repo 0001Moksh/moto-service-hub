@@ -24,7 +24,7 @@ interface CompletionData {
   service_duration_minutes: number;
 }
 
-export default function ServiceComplete() {
+function ServiceCompleteContent() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -212,5 +212,13 @@ export default function ServiceComplete() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ServiceComplete() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ServiceCompleteContent />
+    </Suspense>
   );
 }

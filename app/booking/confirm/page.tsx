@@ -30,7 +30,7 @@ interface BookingDetails {
   available_worker?: Worker;
 }
 
-export default function ConfirmBooking() {
+function ConfirmBookingContent() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -259,5 +259,13 @@ export default function ConfirmBooking() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ConfirmBooking() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ConfirmBookingContent />
+    </Suspense>
   );
 }

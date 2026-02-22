@@ -20,7 +20,7 @@ interface EmergencyData {
   assigned_worker_name: string;
 }
 
-export default function WorkerEmergency() {
+function WorkerEmergencyContent() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -225,5 +225,13 @@ export default function WorkerEmergency() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function WorkerEmergency() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <WorkerEmergencyContent />
+    </Suspense>
   );
 }

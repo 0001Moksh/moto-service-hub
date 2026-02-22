@@ -22,7 +22,7 @@ interface ServiceStartData {
   shop_name: string;
 }
 
-export default function StartService() {
+function StartServiceContent() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -253,5 +253,13 @@ export default function StartService() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function StartService() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <StartServiceContent />
+    </Suspense>
   );
 }
