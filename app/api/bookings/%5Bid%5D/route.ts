@@ -4,7 +4,7 @@ import { verifyToken } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = request.headers.get('Authorization') || '';
@@ -15,7 +15,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const bookingId = params.id;
+    const { id } = await params;
+    const bookingId = id;
 
     // Fetch booking with all related data
     const { data: booking, error } = await supabaseAdmin
@@ -93,7 +94,7 @@ export async function GET(
           worker_id: booking.worker.worker_id,
           worker_name: booking.worker.worker_name,
           rating: booking.worker.rating,
-          phone: booking.worker.phone,
+          phone: booking.worker.phone_number || 'N/A',
           latitude: booking.worker.latitude,
           longitude: booking.worker.longitude
         } : undefined

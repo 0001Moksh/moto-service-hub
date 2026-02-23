@@ -4,7 +4,7 @@ import { verifyToken } from '@/lib/auth';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Extract and verify token
@@ -21,7 +21,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized: Worker access required' }, { status: 403 });
     }
 
-    const bookingId = params.id;
+    const { id } = await params;
+    const bookingId = id;
     const { status: newStatus } = await request.json();
 
     // Validate status

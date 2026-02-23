@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     // Fetch all bookings for this worker to calculate completion rate
     const { data: bookings, error: bookingsError } = await supabaseAdmin
       .from('booking')
-      .select('booking_id, status, completed_at, customer (customer_id), service (service_id)')
+      .select('booking_id, status, customer:customer_id (customer_id)')
       .eq('worker_id', payload.userId);
 
     if (bookingsError) {

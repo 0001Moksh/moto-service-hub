@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       id: w.id,
       name: w.name,
       rating: w.rating,
-      phone: w.phone,
+      phone: w.phone_number || 'N/A',
       response_time_minutes: w.response_time_minutes,
       distance_from_shop: w.distance_from_shop
     }));

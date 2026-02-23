@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = request.headers.get('authorization')
@@ -27,7 +27,8 @@ export async function PUT(
       )
     }
 
-    const shopId = parseInt(params.id)
+    const { id } = await params
+    const shopId = parseInt(id)
     const body = await request.json()
 
     // Verify ownership

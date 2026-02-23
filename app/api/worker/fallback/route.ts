@@ -154,7 +154,7 @@ export async function GET(request: NextRequest) {
         id,
         status,
         created_at,
-        customer:customers(name, phone),
+        customer:customers(name),
         shop:shops(name),
         service:services(name),
         worker:workers(name)

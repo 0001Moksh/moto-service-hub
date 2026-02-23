@@ -4,7 +4,7 @@ import { verifyToken } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = request.headers.get('Authorization') || '';
@@ -15,7 +15,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const bookingId = params.id;
+    const { id } = await params;
+    const bookingId = id;
 
     // Fetch cancellation record
     const { data: cancellation, error } = await supabaseAdmin
@@ -26,10 +27,7 @@ export async function GET(
         cancelled_at,
         tokens_deducted,
         refund_amount,
-        reason,
-        booking:booking(
-          service:service(service_name)
-        )
+        reason
       `)
       .eq('booking_id', bookingId)
       .eq('customer_id', payload.id)
@@ -45,7 +43,6 @@ export async function GET(
         cancellation_id: cancellation.cancellation_id,
         booking_id: cancellation.booking_id,
         cancelled_at: cancellation.cancelled_at,
-        service_name: (cancellation.booking as any)?.service?.service_name,
         tokens_deducted: cancellation.tokens_deducted,
         refund_amount: cancellation.refund_amount,
         reason: cancellation.reason

@@ -202,7 +202,7 @@ export default function RegisterShopPage() {
         </div>
 
         {/* Selfie Upload */}
-        <div className="space-y-2">
+        {/* <div className="space-y-2">
           <Label htmlFor="selfie">Owner Selfie (Optional)</Label>
           <div className="flex items-center gap-3">
             <label
@@ -221,7 +221,7 @@ export default function RegisterShopPage() {
               disabled={isLoading}
             />
           </div>
-        </div>
+        </div> */}
 
         {/* Divider */}
         <div className="border-t border-border pt-4">

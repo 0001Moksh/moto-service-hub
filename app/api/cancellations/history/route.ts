@@ -19,10 +19,12 @@ export async function GET(request: NextRequest) {
         cancellation_id,
         booking_id,
         cancelled_at,
-        service:booking(service:service(service_name)),
         tokens_deducted,
         refund_amount,
-        reason
+        reason,
+        booking:booking_id (
+          booking_id
+        )
       `)
       .eq('customer_id', payload.id)
       .order('cancelled_at', { ascending: false })

@@ -11,7 +11,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = request.headers.get('authorization');
@@ -22,7 +22,8 @@ export async function GET(
     const token = authHeader.slice(7);
     const payload = jwt.verify(token, JWT_SECRET) as any;
 
-    const bookingId = params.id;
+    const { id } = await params;
+    const bookingId = id;
 
     // Fetch booking with all related data
     const { data: booking, error: bookingError } = await supabase
@@ -81,7 +82,7 @@ export async function GET(
         worker_id: worker.id,
         worker_name: worker.name,
         rating: worker.rating,
-        phone: worker.phone,
+        phone: worker.phone_number || 'N/A',
         response_time_minutes: worker.response_time_minutes
       };
     }
@@ -89,7 +90,7 @@ export async function GET(
     const reassignmentData = {
       booking_id: bookingId,
       customer_name: booking.customer?.name,
-      customer_phone: booking.customer?.phone,
+      customer_phone: booking.customer?.location || 'N/A',
       service_name: booking.service?.name,
       shop_name: booking.shop?.name,
       previous_worker: previousWorker,
@@ -109,7 +110,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = request.headers.get('authorization');
@@ -120,7 +121,8 @@ export async function POST(
     const token = authHeader.slice(7);
     const payload = jwt.verify(token, JWT_SECRET) as any;
 
-    const bookingId = params.id;
+    const { id } = await params;
+    const bookingId = id;
     const { new_worker_id } = await request.json();
 
     if (!new_worker_id) {

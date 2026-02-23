@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
         worker_id: selectedWorker.worker_id,
         worker_name: selectedWorker.worker_name,
         rating: selectedWorker.rating,
-        phone: selectedWorker.phone
+        phone: selectedWorker.phone_number || 'N/A'
       },
       message: 'Worker assigned successfully'
     });

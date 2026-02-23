@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
           is_available: worker.is_available,
           unavailable_reason: worker.unavailable_reason,
           rating: worker.rating,
-          phone: worker.phone,
+          phone: worker.phone_number || 'N/A',
           active_bookings_count: activeBookingsCount || 0
         }
       },

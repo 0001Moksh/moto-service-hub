@@ -22,32 +22,24 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get('status');
 
-    // Fetch jobs assigned to this worker
+    // Fetch booking jobs assigned to this worker with related data
     let query = supabaseAdmin
       .from('booking')
       .select(`
         booking_id,
         status,
         service_at,
-        estimated_duration,
-        job (
-          job_id,
-          service (
-            service_id,
-            service_type
-          )
-        ),
-        customer (
+        customer:customer_id (
           customer_id,
           mail,
-          phone
+          location
         ),
-        bike (
+        bike:bike_id (
           bike_id,
           model_no,
           color
         ),
-        shop (
+        shop:shop_id (
           shop_id,
           location
         )
@@ -68,17 +60,17 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform data to match expected format
-    const jobs = data.map((booking: any) => ({
+    const jobs = (data || []).map((booking: any) => ({
       booking_id: booking.booking_id,
       customer_name: booking.customer?.mail?.split('@')[0] || 'Customer',
-      customer_phone: booking.customer?.phone || 'N/A',
+      customer_phone: booking.customer?.location || 'N/A', // Using location since phone doesn't exist
       bike_model: booking.bike?.model_no || 'Unknown',
       bike_color: booking.bike?.color || 'Unknown',
-      service_type: booking.job?.[0]?.service?.[0]?.service_type || 'General Maintenance',
+      service_type: 'General Maintenance', // Default service type
       shop_location: booking.shop?.location || 'Unknown',
       service_at: booking.service_at,
       status: booking.status,
-      estimated_duration: booking.estimated_duration || 60,
+      estimated_duration: 60, // Default duration
       customer_rating: null, // Will be populated after completion
     }));
 

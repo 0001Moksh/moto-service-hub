@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify authentication
@@ -28,7 +28,8 @@ export async function GET(
       )
     }
 
-    const shopId = parseInt(params.id)
+    const { id } = await params
+    const shopId = parseInt(id)
 
     // Fetch shop details
     const { data: shop, error } = await supabaseAdmin

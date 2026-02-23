@@ -4,7 +4,7 @@ import { verifyToken } from '@/lib/auth';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Extract and verify token
@@ -21,7 +21,8 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized: Worker access required' }, { status: 403 });
     }
 
-    const bookingId = params.id;
+    const { id } = await params;
+    const bookingId = id;
 
     // First, check if booking exists and is assigned to this worker
     const { data: booking, error: fetchError } = await supabaseAdmin
